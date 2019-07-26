@@ -1,0 +1,21 @@
+{
+  "name": "@my/lib-a",
+  "version": "0.0.1",
+  "main": "./bundles/lib-a.umd.js",
+  "module": "./fesm5/lib-a.js",
+  "es2015": "./fesm2015/lib-a.js",
+  "esm5": "./esm5/lib-a.js",
+  "esm2015": "./esm2015/lib-a.js",
+  "fesm5": "./fesm5/lib-a.js",
+  "fesm2015": "./fesm2015/lib-a.js",
+  "typings": "./lib-a_public_index.d.ts",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "tslib": "^1.9.0"
+  },
+  "peerDependencies": {
+    "rxjs": "^6.4.0",
+    "zone.js": "~0.9.1"
+  },
+  "sideEffects": false
+}

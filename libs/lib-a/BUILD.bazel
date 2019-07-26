@@ -1,0 +1,38 @@
+package(default_visibility = ["//visibility:public"])
+
+load("@build_bazel_rules_nodejs//:defs.bzl", "npm_package")
+load("@npm_angular_bazel//:index.bzl", "ng_module", "ng_package")
+
+ng_module(
+    name = "lib-a",
+    srcs = glob([
+      "**/*.ts",
+    ]),
+    tsconfig = "//libs/lib-a:tsconfig.lib.json",
+    module_name = "@my/lib-a",
+    deps = [
+        "@npm//@angular/core",
+        "@npm//@angular/common",
+        "//libs/lib-c"
+    ],
+)
+
+ng_package(
+    name = "npm_package",
+    srcs = ["package.json"],
+    entry_point = ":index.ts",
+    # tags = [
+    #     "release-with-framework",
+    # ],
+    # Do not add more to this list.
+    # Dependencies on the full npm_package cause long re-builds.
+    visibility = [
+        "//apps/project-a:__pkg__"
+    ],
+    deps = [
+        ":lib-a",
+        "//libs/lib-c"
+    ],
+)
+
+

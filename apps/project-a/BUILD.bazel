@@ -1,0 +1,186 @@
+package(default_visibility = ["//visibility:public"])
+
+load("@npm_angular_bazel//:index.bzl", "ng_module")
+load("@npm_bazel_karma//:index.bzl", "ts_web_test_suite")
+load("@build_bazel_rules_nodejs//:defs.bzl", "rollup_bundle", "history_server")
+load("@build_bazel_rules_nodejs//internal/web_package:web_package.bzl", "web_package")
+load("@npm_bazel_typescript//:index.bzl", "ts_devserver", "ts_library")
+load("@io_bazel_rules_sass//:defs.bzl", "multi_sass_binary", "sass_binary")
+
+sass_binary(
+  name = "global_stylesheet",
+  src = glob(["styles.css", "styles.scss"])[0],
+  output_name = "global_stylesheet.css",
+)
+
+multi_sass_binary(
+    name = "styles",
+    srcs = glob(
+      include = ["**/*.scss"],
+      exclude = ["styles.scss"],
+    ),
+)
+
+ng_module(
+    name = "project-a",
+    srcs = glob(
+        include = ["**/*.ts"],
+        exclude = [
+            "**/*.spec.ts",
+            "main.ts",
+            "test.ts",
+            "initialize_testbed.ts",
+        ],
+    ),
+    # tsconfig = "//apps:tsconfig-apps.json",
+    assets = glob([
+      "**/*.css",
+      "**/*.html",
+    ]) + ([":styles"] if len(glob(["**/*.scss"])) else []),
+    tsconfig = "//apps:tsconfig.apps.json",
+    deps = [
+        "@npm//@angular/core",
+        "@npm//@angular/common",
+        "@npm//@angular/platform-browser",
+        "@npm//@angular/router",
+        "@npm//@types",
+        "@npm//rxjs",
+        "//apps/project-a/app/lib-a"
+    ],
+)
+
+rollup_bundle(
+    name = "bundle",
+    entry_point = ":main.prod.ts",
+    deps = [
+        "//apps/project-a",
+        "@npm//@angular/router",
+        "@npm//rxjs",
+    ],
+)
+
+web_package(
+    name = "prodapp",
+    assets = [
+        # do not sort
+        "@npm//:node_modules/zone.js/dist/zone.min.js",
+        ":bundle.min.js",
+        ":global_stylesheet",
+    ],
+    data = [
+        "favicon.ico",
+    ],
+    index_html = "index.html",
+)
+
+history_server(
+    name = "prodserver",
+    data = [":prodapp"],
+    templated_args = ["//apps/project-a/prodapp"],
+)
+
+filegroup(
+    name = "rxjs_umd_modules",
+    srcs = [
+        # do not sort
+        "@npm//:node_modules/rxjs/bundles/rxjs.umd.js",
+        ":rxjs_shims.js",
+    ],
+)
+
+# ts_devserver(
+#     name = "devserver",
+#     port = 4200,
+#     entry_module = "project/apps/project-a/main.dev",
+#     serving_path = "/bundle.min.js",
+#     scripts = [
+#         "@npm//:node_modules/tslib/tslib.js",
+#         ":rxjs_umd_modules",
+#     ],
+#     static_files = [
+#         "@npm//:node_modules/zone.js/dist/zone.min.js",
+#         ":global_stylesheet",
+#     ],
+#     data = [
+#         "favicon.ico",
+#     ],
+#     index_html = "index.html",
+#     deps = [":project-a"],
+# )
+
+
+ts_devserver(
+    name = "devserver",
+    port = 4201,
+    entry_module = "project/apps/project-a/main.dev",
+    scripts = [],
+    static_files = [
+        "@npm//:node_modules/zone.js/dist/zone.min.js"
+    ],
+    data = [
+        "favicon.ico",
+        # "@npm//node_modules/marked:marked.min.js",
+    ],
+    index_html = "index.html",
+    deps = [
+        "@npm//:node_modules/tslib/tslib.js",
+        "@npm//:node_modules/@angular/core/bundles/core.umd.js",
+        "@npm//:node_modules/@angular/common/bundles/common.umd.js",
+        "@npm//:node_modules/@angular/common/bundles/common-http.umd.js",
+        "@npm//:node_modules/@angular/router/bundles/router.umd.js",
+        "@npm//:node_modules/@angular/router/router.ngfactory.js",
+        "@npm//:node_modules/@angular/platform-browser/bundles/platform-browser.umd.js",
+        "@npm//:node_modules/@angular/platform-browser/bundles/platform-browser-animations.umd.js",
+        ":rxjs_umd_modules",
+        ":project-a"
+    ],
+)
+
+ts_library(
+    name = "test_lib",
+    testonly = 1,
+    srcs = glob(["**/*.spec.ts"]),
+    deps = [
+        ":project-a",
+        "@npm//@angular/core",
+        "@npm//@angular/router",
+        "@npm//@angular/common",
+        "@npm//@types",
+    ],
+)
+
+ts_library(
+    name = "initialize_testbed",
+    testonly = 1,
+    srcs = [
+        "initialize_testbed.ts",
+    ],
+    deps = [
+        "@npm//@angular/core",
+        "@npm//@angular/platform-browser-dynamic",
+        "@npm//@types",
+    ],
+)
+
+ts_web_test_suite(
+    name = "test",
+    srcs = [
+        "@npm//:node_modules/tslib/tslib.js",
+    ],
+    runtime_deps = [
+        ":initialize_testbed",
+    ],
+    # do not sort
+    bootstrap = [
+        "@npm//:node_modules/zone.js/dist/zone-testing-bundle.js",
+        "@npm//:node_modules/reflect-metadata/Reflect.js",
+    ],
+    browsers = [
+        "@io_bazel_rules_webtesting//browsers:chromium-local",
+    ],
+    deps = [
+        ":rxjs_umd_modules",
+        ":test_lib",
+        "@npm//karma-jasmine",
+    ],
+)

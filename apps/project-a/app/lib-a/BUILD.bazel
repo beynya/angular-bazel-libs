@@ -1,0 +1,22 @@
+
+package(default_visibility = ["//visibility:public"])
+
+load("@npm_angular_bazel//:index.bzl", "ng_module")
+
+ng_module(
+    name = "lib-a",
+    srcs = glob(["**/*.ts", "*.ts"]),
+    tsconfig = "//apps:tsconfig.apps.json",
+    assets = glob([
+      "**/*.css",
+      "**/*.html",
+    ]) + ([":styles"] if len(glob(["**/*.scss"])) else []),
+    deps = [
+        "@npm//@angular/core",
+        "@npm//@angular/platform-browser",
+        "@npm//@angular/router",
+        "@npm//@angular/common",
+        "@npm//@types",
+        "//libs/lib-a"
+    ],
+)
